@@ -2,6 +2,7 @@ import "../index.css";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { loadStripe } from "@stripe/stripe-js";
 
 import {
   addToCart,
@@ -12,6 +13,7 @@ import {
 import { useDispatch } from "react-redux";
 
 const CartDetails = () => {
+  const stripePromise = loadStripe("your_publishable_key_here");
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const cartData = useSelector((state) => state.allCart);
@@ -36,6 +38,38 @@ const CartDetails = () => {
     navigate("/");
     toast.success("Remove all Item in your cart");
   };
+
+  const makePayment = async () => {
+    const stripe = await stripePromise;
+    const body = {
+      product: carts,
+    };
+    const headers = {
+      "Content-Type": "application/json",
+    };
+    try {
+      const response = await fetch(
+        "http://localhost:5173/api/create-checkout-session",
+        {
+          method: "POST",
+          headers: headers,
+          body: JSON.stringify(body),
+        }
+      );
+
+      const session = await response.json();
+
+      const result = await stripe.redirectToCheckout({
+        sessionId: session.id, 
+      });
+
+      if (result.error) {
+        console.error(result.error.message);
+      }
+    } catch (error) {
+      console.error("Payment Error:", error);
+    }
+  };
   return (
     <div className="row justify-content-center m-0">
       <div className="col-md-8 mt-5 mb-5 cartDetails">
@@ -43,12 +77,17 @@ const CartDetails = () => {
           <div className="card-header bg-dark p-3 d-flex w-100 align-items-center">
             <h5 className="text-white m-0">Cart Calculation ({totalItems})</h5>
             {arr.length > 0 && (
-              <button
-                className="btn btn-danger btn-sm ms-auto"
-                onClick={() => emptyCart()}
-              >
-                <i className="fa fa-trash-alt me-2"></i> Clear Cart
-              </button>
+              <>
+                <button
+                  className="btn btn-danger btn-sm ms-auto"
+                  onClick={() => emptyCart()}
+                >
+                  <i className="fa fa-trash-alt me-2"></i> Clear Cart
+                </button>
+                <button type="button" className="btn btn-success btn-sm">
+                  Checkout
+                </button>
+              </>
             )}
           </div>
 

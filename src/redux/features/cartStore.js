@@ -1,11 +1,25 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
+export const getCarts = createAsyncThunk("carts", async () => {
+  const response = await fetch("http://localhost:5000/cart");
+  try {
+    const result = await response.json();
+    console.log(result);
+    return result;
+  } catch (error) {
+    console.log(error);
+    return error;
+  }
+});
 const initialState = {
   carts: [],
+  cartLists: [],
+  loading: false,
+  error: null,
 };
 
 const cartSlice = createSlice({
-  name: "cartSlice",
+  name: "allCart",
   initialState,
   reducers: {
     addToCart: (state, action) => {
@@ -40,7 +54,22 @@ const cartSlice = createSlice({
       state.carts = [];
     },
   },
+  extraReducers: (builder) => {
+    builder
+      .addCase(getCarts.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getCarts.fulfilled, (state, action) => {
+        state.loading = false;
+        state.cartLists = action.payload;
+      })
+      .addCase(getCarts.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message; // Use action.error.message for errors from thunk
+      });
+  },
 });
 
-export const { addToCart, removeToCart, removeSingleCart, emptyAllCarts } = cartSlice.actions;
+export const { addToCart, removeToCart, removeSingleCart, emptyAllCarts } =
+  cartSlice.actions;
 export default cartSlice.reducer;

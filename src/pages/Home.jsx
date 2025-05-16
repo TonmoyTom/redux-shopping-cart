@@ -1,19 +1,24 @@
+import React, { useEffect, CSSProperties } from "react";
+import { ClipLoader } from "react-spinners";
 import Button from "react-bootstrap/Button";
 import Card from "react-bootstrap/Card";
-import Items from "../data/CartData";
 import ReactImage from "../assets/react.svg";
-import { useState } from "react";
-import { addToCart } from "../redux/features/cartStore";
-import { useDispatch } from "react-redux";
+import { addToCart, getCarts } from "../redux/features/cartStore";
+import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 
 const Home = () => {
-  const [cartItems] = useState(Items);
   const dispatch = useDispatch();
+  const { cartLists, loading, error } = useSelector((state) => state.allCart);
+
+  useEffect(() => {
+    dispatch(getCarts());
+  }, [dispatch]);
   const send = (item) => {
     dispatch(addToCart(item));
     toast.success("Item add in your cart");
   };
+
   return (
     <>
       <section className="item_section mt-4 container">
@@ -21,7 +26,19 @@ const Home = () => {
           Restaurant is open now
         </h3>
         <div className="row mt-2 mb-2 d-flex  justify-content-around algin-items-center">
-          {cartItems.map((item, index) => (
+          <div className="col-lg-12 d-flex justify-content-center align-items-center">
+            {loading && (
+              <ClipLoader
+                color="#000"
+                loading={loading}
+                size={50}
+                aria-label="Loading Spinner"
+                data-testid="loader"
+              />
+            )}
+            {!loading && error && <p className="text-danger">{error}</p>}
+          </div>
+          {cartLists.map((item, index) => (
             <Card
               key={index}
               style={{ width: "22rem", marginBottom: "1rem", border: "none" }}
